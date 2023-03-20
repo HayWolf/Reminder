@@ -109,7 +109,7 @@ func TestGetNextWeekday(t *testing.T) {
 	}
 }
 
-func TestGetNextDate(t *testing.T) {
+func TestGetNextDay(t *testing.T) {
 
 	type args struct {
 		day  int
@@ -160,13 +160,21 @@ func TestGetNextDate(t *testing.T) {
 			},
 			want: time.Date(2024, 1, 10, 0, 0, 0, 0, time.UTC),
 		},
+		{
+			name: "in february",
+			input: args{
+				day:  30,
+				base: time.Date(2023, 2, 1, 0, 0, 0, 0, time.UTC),
+			},
+			want: time.Date(2023, 3, 30, 0, 0, 0, 0, time.UTC),
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ret := GetNextDate(tt.input.day, tt.input.base)
+			ret := GetNextDay(tt.input.day, tt.input.base)
 			if !reflect.DeepEqual(tt.want, ret) {
-				t.Errorf("GetNextDate rsp got = %v, want %v", ret, tt.want)
+				t.Errorf("GetNextDay rsp got = %v, want %v", ret, tt.want)
 			}
 		})
 	}

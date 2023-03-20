@@ -1,7 +1,6 @@
 package helper
 
 import (
-	"fmt"
 	"time"
 )
 
@@ -12,28 +11,27 @@ func GetNextWeekday(weekday time.Weekday, base time.Time) time.Time {
 	return base.AddDate(0, 0, int(daysUntil))
 }
 
-// GetNextDate
-// 获取下一个该日期，如果当日就是则返回当日
-func GetNextDate(day int, base time.Time) time.Time {
+// GetNextDay
+// 获取下一个x日的日期，如果当日就是则返回当日
+func GetNextDay(day int, base time.Time) time.Time {
 	year, month := base.Year(), base.Month()
-	fmt.Println(year, month, base)
 
-	// 如果当月已经包含该日期，则计算下一个月的日期
-	if base.Day() > day {
+	// 如果当月该日期已过，或则当前月不存在该日期，则计算下一个月的日期
+	if base.Day() > day || !isValid(year, month, day) {
 		// 不能直接用base去AddDate，可能命中下个月没有base的日期则会出现跨两个月的问题
-		newBase := time.Date(base.Year(), base.Month(), 1, 0, 0, 0, 0, base.Location())
-		year = newBase.AddDate(0, 1, 0).Year()
-		month = newBase.AddDate(0, 1, 0).Month()
+		newBase := time.Date(year, month, 1, 0, 0, 0, 0, base.Location())
+		year, month = newBase.AddDate(0, 1, 0).Year(), newBase.AddDate(0, 1, 0).Month()
+		// 判断新的月份是否有该日期，没有则Add 2个月（实际不会出现一个日期连续两个月不存在，所以最多加2个月）
+		if !isValid(year, month, day) {
+			year, month = newBase.AddDate(0, 2, 0).Year(), newBase.AddDate(0, 2, 0).Month()
+		}
 	}
 
 	// 构造下一个指定日的时间对象
-	nextDate := time.Date(year, month, day, 0, 0, 0, 0, base.Location())
-	fmt.Println(year, month, base, nextDate)
+	return time.Date(year, month, day, 0, 0, 0, 0, base.Location())
+}
 
-	// 如果下一个月不存在该日期，则继续计算下下个月的日期
-	if nextDate.Day() != day || nextDate.Month() != month || nextDate.Year() != year {
-		nextDate = nextDate.AddDate(0, 1, 0)
-	}
-
-	return nextDate
+func isValid(year int, month time.Month, day int) bool {
+	newDate := time.Date(year, month, day, 0, 0, 0, 0, time.UTC)
+	return newDate.Day() == day && newDate.Month() == month && newDate.Year() == year
 }
