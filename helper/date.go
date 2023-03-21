@@ -28,7 +28,7 @@ func GetNextDay(day int, base time.Time) time.Time {
 	}
 
 	// 构造下一个指定日的时间对象
-	return time.Date(year, month, day, 0, 0, 0, 0, base.Location())
+	return time.Date(year, month, day, base.Hour(), base.Minute(), base.Second(), base.Nanosecond(), base.Location())
 }
 
 func isValid(year int, month time.Month, day int) bool {

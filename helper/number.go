@@ -42,10 +42,11 @@ var chPowerNumMap = map[string]*chNumberLevel{
 }
 
 // 数值对应表
-var ChToArNumberMap = map[string]int{
+var chToArNumberMap = map[string]int{
 	"零": 0,
 	"一": 1,
 	"二": 2,
+	"两": 2,
 	"三": 3,
 	"四": 4,
 	"五": 5,
@@ -72,7 +73,7 @@ func convertChNumberToArNumber(inputStrNum string) (ansNum int) {
 	)
 	for index := 0; index < len(chNum); index++ {
 		// 将中文转为阿拉伯数字
-		var getNum = ChToArNumberMap[string(chNum[index])]
+		var getNum = chToArNumberMap[string(chNum[index])]
 		// 如果转换失败 getNum = -1
 		if getNum > 0 {
 			// 处理九九八专用
