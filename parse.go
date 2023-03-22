@@ -1,7 +1,11 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"github.com/HayWolf/Reminder/helper"
+	"github.com/ldigit/config"
+	"github.com/sashabaranov/go-openai"
 	"log"
 	"regexp"
 	"strconv"
@@ -88,9 +92,7 @@ func ParseFrequency(content string) Frequency {
 			}
 			ret.Interval = int(num)
 		}
-
 	}
-
 	return ret
 }
 
@@ -206,5 +208,45 @@ func ParseTrigger(content string, base time.Time) time.Time {
 		log.Printf("base: %s", base)
 	}
 
+	return base
+}
+
+// ParseTriggerByGPT 调用ChatGPT解析时间
+func ParseTriggerByGPT(content string, base time.Time) time.Time {
+	cfg, _ := config.GetGlobalConfig().(*config.Config)
+	client := openai.NewClient(cfg.GetString("openai.key", ""))
+	resp, err := client.CreateChatCompletion(
+		context.Background(),
+		openai.ChatCompletionRequest{
+			Model: cfg.GetString("openai.model", openai.GPT3Dot5Turbo),
+			Messages: []openai.ChatCompletionMessage{
+				{
+					Role: openai.ChatMessageRoleUser,
+					Content: fmt.Sprintf("假如现在的时间是%s，请提取句子\"%s\"中的日期和时间，并转换成Y-m-d H:i:s格式",
+						base.Format("2006年01月02日 03:04:05"), content),
+				},
+			},
+		},
+	)
+
+	if err != nil {
+		log.Printf("ParseTriggerByGPT error:%s, content:%s", content, err.Error())
+		return base
+	}
+
+	result := resp.Choices[0].Message.Content
+	if len(result) > 0 {
+		re := regexp.MustCompile(`\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}`)
+		match := re.FindStringSubmatch(result)
+		if len(match) > 0 && len(match[0]) > 0 {
+			log.Printf("进入GPT分析结果匹配：%s", match[0])
+			date, err := time.Parse("2006-01-02 03:04:05", match[0])
+			if err != nil {
+				log.Printf("time Parse error:%s, content:%s", err.Error(), match[0])
+				return base
+			}
+			return date
+		}
+	}
 	return base
 }

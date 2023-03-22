@@ -2,11 +2,20 @@ package main
 
 import (
 	"fmt"
+	"github.com/ldigit/config"
 	"reflect"
 	"regexp"
 	"testing"
 	"time"
 )
+
+const ConfigPath = "config.yaml"
+
+func init() {
+	// 加载配置文件
+	cfg, _ := config.Load(ConfigPath)
+	config.SetGlobalConfig(cfg)
+}
 
 func TestParseEvent(t *testing.T) {
 
@@ -445,16 +454,207 @@ func TestParseTrigger(t *testing.T) {
 	}
 }
 
+func TestParseTriggerByGPT(t *testing.T) {
+	type args struct {
+		text string
+		base time.Time
+	}
+	tests := []struct {
+		name  string
+		input args
+		want  time.Time
+	}{
+		{
+			name: "这是一个无关键词的话语",
+			input: args{
+				text: "这是一个无关键词的话语",
+				base: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+			},
+			want: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+		},
+		{
+			name: "半个小时后提醒我去领快递",
+			input: args{
+				text: "半个小时后提醒我去领快递",
+				base: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+			},
+			want: time.Date(2023, 1, 1, 0, 30, 0, 0, time.UTC),
+		},
+		{
+			name: "这周六早上8:00提醒我送孩子去画画",
+			input: args{
+				text: "这周六早上8:00提醒我送孩子去画画",
+				base: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+			},
+			want: time.Date(2023, 1, 7, 8, 0, 0, 0, time.UTC),
+		},
+		{
+			name: "每个钟头提醒我喝水",
+			input: args{
+				text: "每个钟头提醒我喝水",
+				base: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+			},
+			want: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+		},
+		{
+			name: "每两个小时提醒我喝水",
+			input: args{
+				text: "每两个小时提醒我喝水",
+				base: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+			},
+			want: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+		},
+		{
+			name: "每天早上8:00叫我起床",
+			input: args{
+				text: "每天早上8:00叫我起床",
+				base: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+			},
+			want: time.Date(2023, 1, 1, 8, 0, 0, 0, time.UTC),
+		},
+		{
+			name: "每隔一天中午12:00提醒我午休",
+			input: args{
+				text: "每隔一天中午12:00提醒我午休",
+				base: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+			},
+			want: time.Date(2023, 1, 1, 12, 0, 0, 0, time.UTC),
+		},
+		{
+			name: "每隔两天下午7:20提醒我要洗头了",
+			input: args{
+				text: "每隔两天下午7:20提醒我要洗头了",
+				base: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+			},
+			want: time.Date(2023, 1, 1, 19, 20, 0, 0, time.UTC),
+		},
+		{
+			name: "每三天下午7:20提醒我要洗头了",
+			input: args{
+				text: "每三天下午7:20提醒我要洗头了",
+				base: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+			},
+			want: time.Date(2023, 1, 1, 19, 20, 0, 0, time.UTC),
+		},
+		{
+			name: "每周五下午5:30提醒我早点下班",
+			input: args{
+				text: "每周五下午5:30提醒我早点下班",
+				base: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+			},
+			want: time.Date(2023, 1, 6, 17, 30, 0, 0, time.UTC),
+		},
+		{
+			name: "每个礼拜五下午5:30提醒我早点下班",
+			input: args{
+				text: "每个礼拜五下午5:30提醒我早点下班",
+				base: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+			},
+			want: time.Date(2023, 1, 6, 17, 30, 0, 0, time.UTC),
+		},
+		{
+			name: "每两星期六10:00提醒我预定会议室",
+			input: args{
+				text: "每两星期六10:00提醒我预定会议室",
+				base: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+			},
+			want: time.Date(2023, 1, 7, 10, 0, 0, 0, time.UTC),
+		},
+		{
+			name: "每两周周六10:00提醒我预定会议室",
+			input: args{
+				text: "每两周周六10:00提醒我预定会议室",
+				base: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+			},
+			want: time.Date(2023, 1, 7, 10, 0, 0, 0, time.UTC),
+		},
+		{
+			name: "每个月1号9:58提醒我领优惠券",
+			input: args{
+				text: "每个月1号9:58提醒我领优惠券",
+				base: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+			},
+			want: time.Date(2023, 1, 1, 9, 58, 0, 0, time.UTC),
+		},
+		{
+			name: "每隔一个月15号8:30提醒我去爬山",
+			input: args{
+				text: "每隔一个月15号8:30提醒我去爬山",
+				base: time.Date(2023, 1, 16, 0, 0, 0, 0, time.UTC),
+			},
+			want: time.Date(2023, 2, 15, 8, 30, 0, 0, time.UTC),
+		},
+		{
+			name: "每两个月1号10:30提醒我要理发了",
+			input: args{
+				text: "每两个月1号10:30提醒我要理发了",
+				base: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+			},
+			want: time.Date(2023, 1, 1, 10, 30, 0, 0, time.UTC),
+		},
+		{
+			name: "2月29号10:30提醒我订机票",
+			input: args{
+				text: "2月29号10:30提醒我订机票",
+				base: time.Date(2023, 3, 1, 0, 0, 0, 0, time.UTC),
+			},
+			want: time.Date(2024, 2, 29, 10, 30, 0, 0, time.UTC),
+		},
+		{
+			name: "下下周二提醒我要理发了",
+			input: args{
+				text: "下下周二提醒我要理发了",
+				base: time.Date(2023, 1, 1, 10, 0, 0, 0, time.UTC),
+			},
+			want: time.Date(2023, 1, 17, 10, 0, 0, 0, time.UTC),
+		},
+		{
+			name: "明天早上10:00提醒我要跟同事开会",
+			input: args{
+				text: "明天早上10:00提醒我要跟同事开会",
+				base: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+			},
+			want: time.Date(2023, 1, 2, 10, 0, 0, 0, time.UTC),
+		},
+		{
+			name: "后天早上10:00提醒我要跟同事开会",
+			input: args{
+				text: "后天早上10:00提醒我要跟同事开会",
+				base: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+			},
+			want: time.Date(2023, 1, 3, 10, 0, 0, 0, time.UTC),
+		},
+		{
+			name: "大后天早上10:00提醒我要跟同事开会",
+			input: args{
+				text: "大后天早上10:00提醒我要跟同事开会",
+				base: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+			},
+			want: time.Date(2023, 1, 4, 10, 0, 0, 0, time.UTC),
+		},
+		{
+			name: "明天下午六点20分提醒我去取快递",
+			input: args{
+				text: "明天下午六点20分提醒我去取快递",
+				base: time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+			},
+			want: time.Date(2023, 1, 2, 18, 20, 0, 0, time.UTC),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ret := ParseTriggerByGPT(tt.input.text, tt.input.base)
+			if !reflect.DeepEqual(tt.want, ret) {
+				t.Errorf("ParseTriggerByGPT rsp got = %v, want %v", ret, tt.want)
+			}
+		})
+	}
+}
+
 func TestDo(t *testing.T) {
-	content := "明天是3月22号，大家记得提交问卷"
-	//content = "明天是月22号，大家记得提交问卷"
-	//content = "半个小时后提醒我去取快递"
-	//content = "每两个月1号10:30提醒我要理发了"
-	content = "这这周五下午5:30提醒我早点下班"
-	re := regexp.MustCompile(`^过?([0123456789零一二两三四五六七八九十百千半]*)?个?(分钟|小时|钟头|星期|礼拜|分|钟|时|天|日|周|月)后?.*$`)
-	re = regexp.MustCompile(`(([0123456789一二三四五六七八九十]+)月)?([0123456789一二三四五六七八九十]+)(日|号)`)
-	re = regexp.MustCompile(`(这|下*)?(周|星期|礼拜)([1234567一二三四五六日天])`)
-	match := re.FindStringSubmatch(content)
+	result := "转换成Y-m-d H:i:s格式后为：2023-01-06 17:30:00。"
+	re := regexp.MustCompile(`\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}`)
+	match := re.FindStringSubmatch(result)
 	for i, s := range match {
 		fmt.Println(i, s)
 	}

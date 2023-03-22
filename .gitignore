@@ -15,5 +15,8 @@ Reminder
 # IDE files
 .idea
 
+# Config files
+config.yaml
+
 # Dependency directories (remove the comment below to include it)
 # vendor/
