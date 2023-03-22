@@ -222,8 +222,8 @@ func ParseTriggerByGPT(content string, base time.Time) time.Time {
 			Messages: []openai.ChatCompletionMessage{
 				{
 					Role: openai.ChatMessageRoleUser,
-					Content: fmt.Sprintf("假如现在的时间是%s，请提取句子\"%s\"中的日期和时间，并转换成Y-m-d H:i:s格式",
-						base.Format("2006年01月02日 03:04:05"), content),
+					Content: fmt.Sprintf("假如现在的时间是%s，请提取句子\"%s\"中的日期和时间，并转换成Y-m-d H:i:s格式，如果没有提到具体的时间，请按当前时间推算",
+						base.Format("2006年01月02日 15:04:05"), content),
 				},
 			},
 		},
@@ -240,7 +240,7 @@ func ParseTriggerByGPT(content string, base time.Time) time.Time {
 		match := re.FindStringSubmatch(result)
 		if len(match) > 0 && len(match[0]) > 0 {
 			log.Printf("进入GPT分析结果匹配：%s", match[0])
-			date, err := time.Parse("2006-01-02 03:04:05", match[0])
+			date, err := time.Parse("2006-01-02 15:04:05", match[0])
 			if err != nil {
 				log.Printf("time Parse error:%s, content:%s", err.Error(), match[0])
 				return base
