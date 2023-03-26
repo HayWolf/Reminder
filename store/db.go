@@ -12,8 +12,12 @@ var db *gorm.DB
 
 func setup() {
 	cfg, _ := config.GetGlobalConfig().(*config.Config)
-	dbPath := cfg.GetString("database.path", "reminder.db")
-	conn, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
+	if cfg == nil {
+		log.Print("GetGlobalConfig failed")
+		return
+	}
+	dsn := cfg.GetString("database.dsn", "reminder.db")
+	conn, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Print(err.Error())
 	}
@@ -21,23 +25,38 @@ func setup() {
 	if err != nil {
 		log.Printf("connect db server failed. error: %s", err.Error())
 	}
-	sqlDB.SetMaxIdleConns(10)
-	sqlDB.SetMaxOpenConns(100)
+	sqlDB.SetMaxIdleConns(cfg.GetInt("database.max_idle", 10))
+	sqlDB.SetMaxOpenConns(cfg.GetInt("database.max_open", 100))
 	sqlDB.SetConnMaxLifetime(time.Second * 600)
 	db = conn
 }
 
-func NewClient() *gorm.DB {
+// MigrateTable 初始化数据表
+func MigrateTable() {
+	db := GetInstance()
+	tables := []interface{}{
+		Message{},
+		Task{},
+	}
+
+	for _, t := range tables {
+		_ = db.AutoMigrate(&t)
+	}
+}
+
+// GetInstance 获取DB连接实例
+func GetInstance() *gorm.DB {
 	if db == nil {
 		setup()
-	}
-	sqlDB, err := db.DB()
-	if err != nil {
-		setup()
-	}
-	if err := sqlDB.Ping(); err != nil {
-		sqlDB.Close()
-		setup()
+	} else {
+		sqlDB, err := db.DB()
+		if err != nil {
+			setup()
+		}
+		if err = sqlDB.Ping(); err != nil {
+			sqlDB.Close()
+			setup()
+		}
 	}
 
 	return db
