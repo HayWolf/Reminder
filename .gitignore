@@ -15,5 +15,12 @@ Reminder
 # IDE files
 .idea
 
+# Config files
+config.yaml
+
+# DATA
+*.db
+storage.json
+
 # Dependency directories (remove the comment below to include it)
 # vendor/
