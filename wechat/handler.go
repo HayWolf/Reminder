@@ -4,11 +4,21 @@ import (
 	"fmt"
 	"github.com/eatmoreapple/openwechat"
 	"github.com/skip2/go-qrcode"
+	"log"
+	"os"
 )
 
 func ConsoleQrCode(uuid string) {
 	q, _ := qrcode.New("https://login.weixin.qq.com/l/"+uuid, qrcode.Low)
-	fmt.Println(q.ToString(true))
+	qstr := q.ToString(true)
+	file, err := os.Create("qrcode.txt")
+	if err != nil {
+		log.Printf("open qrcode file error: %s", err.Error())
+		fmt.Println(qstr)
+		return
+	}
+	defer file.Close()
+	file.WriteString(qstr)
 }
 
 func MessageHandler(msg *openwechat.Message) {
@@ -18,6 +28,11 @@ func MessageHandler(msg *openwechat.Message) {
 		fmt.Printf("nickname:%s, username:%s, ID:%s, isGroupMsg:%v, isAt:%v, fromUsername:%s, toUsername:%s, content:%s\n",
 			sender.NickName, sender.UserName, sender.ID(), msg.IsSendByGroup(), msg.IsAt(),
 			msg.FromUserName, msg.ToUserName, msg.Content)
+	}
+
+	// 群聊中被at了
+	if msg.IsSendByGroup() && msg.IsAt() && !msg.IsSendBySelf() {
+		msg.ReplyText("当前仅支持单聊模式哦，请私聊我吧～")
 	}
 
 	// 单聊的文本消息

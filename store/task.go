@@ -13,6 +13,7 @@ type Task struct {
 	Unit       string         `gorm:"colum:unit;type:string;not null;default:none"`
 	Interval   uint           `gorm:"colum:interval;not null;default:0"`
 	FirstTime  time.Time      `gorm:"colum:first_time"`
+	LastTime   time.Time      `gorm:"colum:last_time;comment:最近一次派单时间"`
 	CreateTime time.Time      `gorm:"column:create_time;autoCreateTime:nano"`
 	ModifyTime time.Time      `gorm:"column:modify_time;autoUpdateTime:nano"`
 	DeletedAt  gorm.DeletedAt `gorm:"index" json:"-"`
